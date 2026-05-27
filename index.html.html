@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Fuel"/>
+<title>Fuel – Nutrition OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #F7F4EF; font-family: 'Syne', sans-serif; color: #2C2825; -webkit-tap-highlight-color: transparent; }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+  button { cursor: pointer; font-family: inherit; }
+  input { font-family: inherit; outline: none; -webkit-appearance: none; }
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: #F0EDE7; }
+  ::-webkit-scrollbar-thumb { background: #CEC7BB; border-radius: 4px; }
+
+  /* Layout */
+  #app { min-height: 100vh; display: flex; flex-direction: column; }
+  #header { background: #fff; border-bottom: 1px solid #E4DED5; padding: 16px 16px 0; box-shadow: 0 1px 4px rgba(0,0,0,0.06); position: sticky; top: 0; z-index: 10; }
+  #header-top { display: flex; align-items: baseline; gap: 10px; }
+  #logo { font-size: 22px; font-weight: 800; color: #C0622A; letter-spacing: -0.5px; }
+  #logo-sub { font-size: 10px; color: #B0A89E; letter-spacing: 3px; text-transform: uppercase; }
+  #header-date { font-family: 'DM Mono', monospace; font-size: 10px; color: #B0A89E; margin-top: 3px; }
+  #tabs { display: flex; margin-top: 12px; }
+  .tab-btn { padding: 10px 20px; background: none; border: none; border-bottom: 2px solid transparent; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #B0A89E; transition: all 0.2s; }
+  .tab-btn.active { color: #C0622A; border-bottom-color: #C0622A; }
+
+  #content { flex: 1; padding: 16px; max-width: 480px; margin: 0 auto; width: 100%; }
+
+  /* Cards */
+  .card { background: #fff; border-radius: 14px; border: 1px solid #E4DED5; box-shadow: 0 1px 4px rgba(0,0,0,0.05); padding: 14px 16px; margin-bottom: 12px; }
+  .card-title { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #7A6F65; margin-bottom: 12px; }
+
+  /* Calorie bar */
+  #cal-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  #cal-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #7A6F65; }
+  #cal-val { font-family: 'DM Mono', monospace; font-size: 11px; color: #B0A89E; }
+  #cal-val span { font-size: 16px; font-weight: 700; color: #C0622A; }
+  #cal-track { background: #F0EDE7; border-radius: 6px; height: 8px; overflow: hidden; }
+  #cal-fill { height: 100%; border-radius: 6px; background: #C0622A; transition: width 0.6s ease; }
+  #cal-remain { font-family: 'DM Mono', monospace; font-size: 10px; color: #B0A89E; text-align: right; margin-top: 5px; }
+
+  /* Macro rings */
+  #rings { display: flex; justify-content: space-around; padding: 18px 0; }
+  .ring-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .ring-label { font-size: 10px; color: #7A6F65; letter-spacing: 1.5px; text-transform: uppercase; }
+  .ring-val { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 600; color: #2C2825; }
+  .ring-sub { font-family: 'DM Mono', monospace; font-size: 8px; color: #B0A89E; }
+
+  /* Remaining grid */
+  #remain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .remain-cell { background: #F0EDE7; border-radius: 10px; padding: 8px 12px; }
+  .remain-cell-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #B0A89E; margin-bottom: 2px; }
+  .remain-cell-val { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 700; }
+  .remain-cell-unit { font-size: 10px; color: #B0A89E; }
+  .remain-cell-sub { font-family: 'DM Mono', monospace; font-size: 9px; color: #B0A89E; }
+
+  /* Micro bars */
+  .micro-row { margin-bottom: 10px; }
+  .micro-header { display: flex; justify-content: space-between; margin-bottom: 3px; }
+  .micro-name { font-size: 11px; color: #7A6F65; }
+  .micro-nums { font-family: 'DM Mono', monospace; font-size: 11px; color: #2C2825; }
+  .micro-nums span { color: #B0A89E; }
+  .micro-track { background: #F0EDE7; border-radius: 4px; height: 5px; overflow: hidden; }
+  .micro-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+
+  /* Meal filter pills */
+  .pill-row { display: flex; gap: 5px; flex-wrap: wrap; }
+  .pill { padding: 4px 10px; border-radius: 20px; font-family: 'DM Mono', monospace; font-size: 9px; border: 1px solid #E4DED5; background: none; color: #B0A89E; transition: all 0.2s; }
+  .pill.active { background: #F0D5C5; border-color: #C0622A; color: #C0622A; }
+
+  /* Food log header */
+  #log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  #log-title { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #7A6F65; }
+
+  /* Food entry */
+  .food-entry { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #fff; border-radius: 10px; margin-bottom: 6px; border: 1px solid #E4DED5; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .food-entry-body { flex: 1; min-width: 0; }
+  .food-entry-top { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+  .food-meal-tag { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; flex-shrink: 0; }
+  .food-name { font-size: 12px; font-weight: 600; color: #2C2825; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .food-macros { font-family: 'DM Mono', monospace; font-size: 10px; color: #7A6F65; }
+  .food-remove { background: none; border: none; color: #B0A89E; font-size: 20px; line-height: 1; padding: 0 0 0 10px; flex-shrink: 0; transition: color 0.2s; }
+  .food-remove:hover { color: #BF4040; }
+
+  /* Log tab */
+  #meal-select { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .meal-pill { padding: 7px 13px; border-radius: 20px; font-size: 10px; font-weight: 700; letter-spacing: 1px; border: 1px solid #E4DED5; background: #fff; color: #7A6F65; transition: all 0.2s; }
+  .meal-pill.active { background: #F0D5C5; border-color: #C0622A; color: #C0622A; }
+  #search-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  #search-input { flex: 1; background: #fff; border: 1px solid #E4DED5; border-radius: 10px; padding: 12px 14px; color: #2C2825; font-size: 12px; font-family: 'DM Mono', monospace; }
+  #search-input::placeholder { color: #B0A89E; }
+  #search-btn { padding: 12px 16px; background: #C0622A; border: none; border-radius: 10px; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 1px; min-width: 82px; transition: opacity 0.2s; }
+  #search-btn:disabled { opacity: 0.5; }
+  #ai-error { color: #BF4040; font-family: 'DM Mono', monospace; font-size: 11px; margin-bottom: 10px; }
+  #ai-result { background: #fff; border: 1px solid #E4DED5; border-radius: 14px; padding: 14px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  #ai-result-name { font-size: 14px; font-weight: 700; color: #C0622A; margin-bottom: 8px; }
+  #ai-result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 0; margin-bottom: 12px; }
+  .ai-nutr { font-family: 'DM Mono', monospace; font-size: 10px; color: #7A6F65; }
+  .ai-nutr span { color: #B0A89E; }
+  #ai-add-btn { width: 100%; padding: 11px; background: #C0622A; border: none; border-radius: 10px; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+  #entries-count { font-size: 10px; color: #B0A89E; letter-spacing: 2px; text-transform: uppercase; margin: 16px 0 8px; }
+
+  /* Coach tab */
+  #snapshot { background: #fff; border: 1px solid #E4DED5; border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; font-family: 'DM Mono', monospace; font-size: 10px; color: #7A6F65; line-height: 1.6; }
+  #chat-wrap { background: #fff; border: 1px solid #E4DED5; border-radius: 14px; overflow: hidden; margin-bottom: 10px; }
+  #chat-messages { height: 320px; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  #chat-empty { text-align: center; color: #B0A89E; font-family: 'DM Mono', monospace; font-size: 11px; padding: 40px 0; line-height: 1.6; }
+  .chat-msg { max-width: 88%; border-radius: 10px; padding: 9px 13px; font-family: 'DM Mono', monospace; font-size: 11px; line-height: 1.65; white-space: pre-wrap; }
+  .chat-user { align-self: flex-end; background: #F0D5C5; border: 1px solid rgba(192,98,42,0.25); color: #C0622A; }
+  .chat-ai { align-self: flex-start; background: #F0EDE7; border: 1px solid #E4DED5; color: #2C2825; }
+  #chat-thinking { align-self: flex-start; color: #B0A89E; font-family: 'DM Mono', monospace; font-size: 10px; }
+  #chat-input-row { border-top: 1px solid #E4DED5; display: flex; gap: 8px; padding: 10px; }
+  #chat-input { flex: 1; background: #F0EDE7; border: 1px solid #E4DED5; border-radius: 8px; padding: 9px 12px; color: #2C2825; font-family: 'DM Mono', monospace; font-size: 11px; }
+  #chat-input::placeholder { color: #B0A89E; }
+  #chat-send { padding: 9px 16px; background: #C0622A; border: none; border-radius: 8px; color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 1px; transition: all 0.2s; }
+  #chat-send:disabled { background: #F0EDE7; color: #B0A89E; }
+  #quick-prompts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .qp { padding: 7px 12px; background: #fff; border: 1px solid #E4DED5; border-radius: 20px; color: #7A6F65; font-family: 'DM Mono', monospace; font-size: 9px; transition: all 0.2s; }
+  .qp:hover { border-color: #C0622A; color: #C0622A; }
+
+  .hidden { display: none !important; }
+  .empty-state { text-align: center; color: #B0A89E; font-family: 'DM Mono', monospace; font-size: 11px; padding: 24px 0; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- HEADER -->
+  <div id="header">
+    <div id="header-top">
+      <div id="logo">FUEL</div>
+      <div id="logo-sub">Nutrition OS</div>
+    </div>
+    <div id="header-date"></div>
+    <div id="tabs">
+      <button class="tab-btn active" data-tab="today">Today</button>
+      <button class="tab-btn" data-tab="log">Log</button>
+      <button class="tab-btn" data-tab="coach">Coach</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- TODAY TAB -->
+    <div id="tab-today">
+      <!-- Calorie bar -->
+      <div class="card">
+        <div id="cal-row">
+          <div id="cal-label">Calories</div>
+          <div id="cal-val"><span id="cal-eaten">0</span> / 2300 kcal</div>
+        </div>
+        <div id="cal-track"><div id="cal-fill" style="width:0%"></div></div>
+        <div id="cal-remain">2300 kcal remaining</div>
+      </div>
+
+      <!-- Macro rings -->
+      <div class="card" style="padding:18px 8px;">
+        <div id="rings">
+          <div class="ring-wrap">
+            <svg width="84" height="84" style="transform:rotate(-90deg)">
+              <circle cx="42" cy="42" r="34" fill="none" stroke="#E4DED5" stroke-width="6"/>
+              <circle id="ring-protein" cx="42" cy="42" r="34" fill="none" stroke="#3A7D5C" stroke-width="6" stroke-linecap="round" stroke-dasharray="0 213.6"/>
+            </svg>
+            <div style="margin-top:-58px;margin-bottom:30px;text-align:center">
+              <div class="ring-val" id="rv-protein">0</div>
+              <div class="ring-sub">/185g</div>
+            </div>
+            <div class="ring-label">Protein</div>
+          </div>
+          <div class="ring-wrap">
+            <svg width="84" height="84" style="transform:rotate(-90deg)">
+              <circle cx="42" cy="42" r="34" fill="none" stroke="#E4DED5" stroke-width="6"/>
+              <circle id="ring-carbs" cx="42" cy="42" r="34" fill="none" stroke="#B07D2A" stroke-width="6" stroke-linecap="round" stroke-dasharray="0 213.6"/>
+            </svg>
+            <div style="margin-top:-58px;margin-bottom:30px;text-align:center">
+              <div class="ring-val" id="rv-carbs">0</div>
+              <div class="ring-sub">/150g</div>
+            </div>
+            <div class="ring-label">Carbs</div>
+          </div>
+          <div class="ring-wrap">
+            <svg width="84" height="84" style="transform:rotate(-90deg)">
+              <circle cx="42" cy="42" r="34" fill="none" stroke="#E4DED5" stroke-width="6"/>
+              <circle id="ring-fat" cx="42" cy="42" r="34" fill="none" stroke="#C0622A" stroke-width="6" stroke-linecap="round" stroke-dasharray="0 213.6"/>
+            </svg>
+            <div style="margin-top:-58px;margin-bottom:30px;text-align:center">
+              <div class="ring-val" id="rv-fat">0</div>
+              <div class="ring-sub">/50g</div>
+            </div>
+            <div class="ring-label">Fat</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Still needed -->
+      <div class="card">
+        <div class="card-title">Still Needed Today</div>
+        <div id="remain-grid">
+          <div class="remain-cell">
+            <div class="remain-cell-label">Calories</div>
+            <div class="remain-cell-val" id="rem-cal" style="color:#C0622A">2300<span class="remain-cell-unit">kcal</span></div>
+            <div class="remain-cell-sub" id="rem-cal-sub">remaining</div>
+          </div>
+          <div class="remain-cell">
+            <div class="remain-cell-label">Protein</div>
+            <div class="remain-cell-val" id="rem-pro" style="color:#3A7D5C">185<span class="remain-cell-unit">g</span></div>
+            <div class="remain-cell-sub" id="rem-pro-sub">remaining</div>
+          </div>
+          <div class="remain-cell">
+            <div class="remain-cell-label">Carbs</div>
+            <div class="remain-cell-val" id="rem-carb" style="color:#B07D2A">150<span class="remain-cell-unit">g</span></div>
+            <div class="remain-cell-sub" id="rem-carb-sub">remaining</div>
+          </div>
+          <div class="remain-cell">
+            <div class="remain-cell-label">Fat</div>
+            <div class="remain-cell-val" id="rem-fat" style="color:#C0622A">50<span class="remain-cell-unit">g</span></div>
+            <div class="remain-cell-sub" id="rem-fat-sub">remaining</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Micros -->
+      <div class="card" id="micros-card">
+        <div class="card-title">Micronutrients</div>
+        <div id="micros-list"></div>
+      </div>
+
+      <!-- Food log -->
+      <div id="log-header">
+        <div id="log-title">Food Log</div>
+        <div class="pill-row" id="filter-pills"></div>
+      </div>
+      <div id="today-entries"></div>
+    </div>
+
+    <!-- LOG TAB -->
+    <div id="tab-log" class="hidden">
+      <div style="font-size:10px;color:#7A6F65;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px">Add Food to Log</div>
+      <div id="meal-select"></div>
+      <div id="search-row">
+        <input id="search-input" type="text" placeholder="e.g. grilled chicken 6oz, Chipotle bowl…"/>
+        <button id="search-btn">LOOK UP</button>
+      </div>
+      <div id="ai-error" class="hidden"></div>
+      <div id="ai-result" class="hidden">
+        <div id="ai-result-name"></div>
+        <div id="ai-result-grid"></div>
+        <button id="ai-add-btn">+ Add to Log</button>
+      </div>
+      <div id="entries-count"></div>
+      <div id="log-entries-list"></div>
+    </div>
+
+    <!-- COACH TAB -->
+    <div id="tab-coach" class="hidden">
+      <div style="font-size:10px;color:#7A6F65;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px">AI Nutrition Coach</div>
+      <div id="snapshot"></div>
+      <div id="chat-wrap">
+        <div id="chat-messages">
+          <div id="chat-empty">Your meals are loaded. Ask what to eat next,<br>how to hit remaining macros, or anything else.</div>
+        </div>
+        <div id="chat-input-row">
+          <input id="chat-input" type="text" placeholder="Ask your nutrition coach…"/>
+          <button id="chat-send">SEND</button>
+        </div>
+      </div>
+      <div id="quick-prompts"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const GOALS = { calories:2300, protein:185, carbs:150, fat:50 };
+const CIRC = 2 * Math.PI * 34;
+
+const MICROS_RDA = [
+  { key:'sodium',    label:'Sodium',    unit:'mg', rda:2300 },
+  { key:'fiber',     label:'Fiber',     unit:'g',  rda:38   },
+  { key:'sugar',     label:'Sugar',     unit:'g',  rda:36   },
+  { key:'vitaminC',  label:'Vitamin C', unit:'mg', rda:90   },
+  { key:'calcium',   label:'Calcium',   unit:'mg', rda:1000 },
+  { key:'iron',      label:'Iron',      unit:'mg', rda:8    },
+  { key:'potassium', label:'Potassium', unit:'mg', rda:3400 },
+  { key:'vitaminD',  label:'Vitamin D', unit:'IU', rda:600  },
+];
+
+let entries = [
+  { id:1,  meal:'Breakfast', name:'4 Extra Large Eggs',                 calories:280, protein:24.8, carbs:1.6,  fat:19.6, sodium:280, fiber:0,   sugar:1.2, vitaminC:0,  calcium:112, iron:3.6, potassium:336, vitaminD:164 },
+  { id:2,  meal:'Breakfast', name:'75g Avocado',                         calories:120, protein:1.5,  carbs:6.4,  fat:11.0, sodium:5,   fiber:5.0, sugar:0.4, vitaminC:7.5,calcium:9,   iron:0.5, potassium:360, vitaminD:0   },
+  { id:3,  meal:'Breakfast', name:'½ Cup Air-Fried Golden Potatoes',     calories:105, protein:2.5,  carbs:24.0, fat:1.2,  sodium:180, fiber:2.1, sugar:1.0, vitaminC:12, calcium:10,  iron:0.7, potassium:420, vitaminD:0   },
+  { id:4,  meal:'Lunch',     name:"Willy's – Adobo Chicken",            calories:190, protein:32.0, carbs:4.0,  fat:5.0,  sodium:480, fiber:0,   sugar:1.0, vitaminC:0,  calcium:20,  iron:1.2, potassium:390, vitaminD:0   },
+  { id:5,  meal:'Lunch',     name:"Willy's – Mexican Rice",             calories:210, protein:4.0,  carbs:42.0, fat:3.0,  sodium:390, fiber:1.5, sugar:2.0, vitaminC:2,  calcium:20,  iron:1.0, potassium:130, vitaminD:0   },
+  { id:6,  meal:'Lunch',     name:"Willy's – Fajita Vegetables",        calories:35,  protein:1.0,  carbs:7.0,  fat:0.5,  sodium:210, fiber:1.5, sugar:3.5, vitaminC:28, calcium:15,  iron:0.4, potassium:180, vitaminD:0   },
+  { id:7,  meal:'Lunch',     name:"Willy's – Queso",                    calories:80,  protein:3.0,  carbs:4.0,  fat:6.0,  sodium:280, fiber:0,   sugar:1.0, vitaminC:0,  calcium:90,  iron:0.2, potassium:60,  vitaminD:4   },
+  { id:8,  meal:'Lunch',     name:"Willy's – Shredded Cheese",          calories:55,  protein:3.5,  carbs:0.5,  fat:4.5,  sodium:95,  fiber:0,   sugar:0,   vitaminC:0,  calcium:100, iron:0.1, potassium:25,  vitaminD:2   },
+  { id:9,  meal:'Lunch',     name:"Willy's – Habanero Salsa",           calories:15,  protein:0.5,  carbs:3.0,  fat:0,    sodium:135, fiber:0.5, sugar:1.5, vitaminC:8,  calcium:8,   iron:0.3, potassium:90,  vitaminD:0   },
+  { id:10, meal:'Lunch',     name:"Willy's – Pico de Gallo",            calories:20,  protein:0.5,  carbs:4.0,  fat:0,    sodium:160, fiber:0.8, sugar:2.5, vitaminC:10, calcium:12,  iron:0.3, potassium:140, vitaminD:0   },
+  { id:11, meal:'Lunch',     name:"Willy's – Red + Pickled Onion",      calories:20,  protein:0.5,  carbs:4.5,  fat:0,    sodium:120, fiber:0.5, sugar:2.0, vitaminC:3.5,calcium:14,  iron:0.2, potassium:85,  vitaminD:0   },
+  { id:12, meal:'Lunch',     name:"Willy's – ½ Side Chips",             calories:140, protein:2.0,  carbs:19.0, fat:6.5,  sodium:115, fiber:1.0, sugar:0,   vitaminC:0,  calcium:20,  iron:0.5, potassium:60,  vitaminD:0   },
+];
+
+let activeTab = 'today';
+let mealFilter = 'All';
+let selectedMeal = 'Breakfast';
+let chatHistory = [];
+let aiResultData = null;
+let nextId = 100;
+
+const MEAL_COLORS = { Breakfast:'#B07D2A', Lunch:'#3A7D5C', Dinner:'#4A6FA5', Snack:'#8A5A9A' };
+
+// ── Utilities ────────────────────────────────────────────────────────────────
+function sum() {
+  const t = { calories:0, protein:0, carbs:0, fat:0, sodium:0, fiber:0, sugar:0, vitaminC:0, calcium:0, iron:0, potassium:0, vitaminD:0 };
+  entries.forEach(e => Object.keys(t).forEach(k => t[k] += (e[k]||0)));
+  return t;
+}
+
+function fmt(n) { return Math.round(n * 10) / 10; }
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function render() {
+  const t = sum();
+  renderToday(t);
+  renderLog(t);
+  renderCoachSnapshot(t);
+}
+
+function renderToday(t) {
+  // Date
+  document.getElementById('header-date').textContent =
+    new Date().toISOString().slice(0,10) + ' · Active Male · 20yr · 2,300 kcal target';
+
+  // Cal bar
+  const calPct = Math.min(t.calories / GOALS.calories, 1);
+  document.getElementById('cal-eaten').textContent = Math.round(t.calories);
+  document.getElementById('cal-fill').style.width = (calPct * 100) + '%';
+  document.getElementById('cal-fill').style.background = calPct >= 1 ? '#BF4040' : '#C0622A';
+  const remCal = GOALS.calories - Math.round(t.calories);
+  document.getElementById('cal-remain').textContent = remCal > 0 ? remCal + ' kcal remaining' : Math.abs(remCal) + ' kcal over goal';
+  document.getElementById('cal-remain').style.color = remCal < 0 ? '#BF4040' : '#B0A89E';
+
+  // Rings
+  function setRing(id, val, goal) {
+    const pct = Math.min(val/goal, 1);
+    document.getElementById('ring-' + id).setAttribute('stroke-dasharray', (pct*CIRC) + ' ' + CIRC);
+  }
+  setRing('protein', t.protein, GOALS.protein);
+  setRing('carbs', t.carbs, GOALS.carbs);
+  setRing('fat', t.fat, GOALS.fat);
+  document.getElementById('rv-protein').textContent = Math.round(t.protein);
+  document.getElementById('rv-carbs').textContent = Math.round(t.carbs);
+  document.getElementById('rv-fat').textContent = Math.round(t.fat);
+
+  // Remaining cells
+  function setRem(baseId, val, unit, color) {
+    const over = val < 0;
+    const el = document.getElementById('rem-' + baseId);
+    const disp = over ? '+' + Math.abs(val) : val;
+    el.style.color = over ? '#BF4040' : color;
+    el.innerHTML = disp + '<span class="remain-cell-unit">' + unit + '</span>';
+    document.getElementById('rem-' + baseId + '-sub').textContent = over ? 'over goal' : 'remaining';
+  }
+  setRem('cal',  Math.round(GOALS.calories - t.calories), 'kcal', '#C0622A');
+  setRem('pro',  Math.round(GOALS.protein  - t.protein),  'g',    '#3A7D5C');
+  setRem('carb', Math.round(GOALS.carbs    - t.carbs),    'g',    '#B07D2A');
+  setRem('fat',  Math.round(GOALS.fat      - t.fat),      'g',    '#C0622A');
+
+  // Micros
+  const ml = document.getElementById('micros-list');
+  ml.innerHTML = '';
+  MICROS_RDA.forEach(m => {
+    const val = t[m.key] || 0;
+    const pct = Math.min(val / m.rda, 1) * 100;
+    const barColor = pct>=100 ? '#3A7D5C' : pct>=60 ? '#B07D2A' : pct>=30 ? '#C05A3A' : '#BF4040';
+    ml.innerHTML += `
+      <div class="micro-row">
+        <div class="micro-header">
+          <span class="micro-name">${m.label}</span>
+          <span class="micro-nums">${Math.round(val)}<span>/${m.rda}${m.unit}</span></span>
+        </div>
+        <div class="micro-track"><div class="micro-fill" style="width:${pct}%;background:${barColor}"></div></div>
+      </div>`;
+  });
+
+  // Filter pills
+  const fp = document.getElementById('filter-pills');
+  fp.innerHTML = '';
+  ['All','Breakfast','Lunch','Dinner','Snack'].forEach(m => {
+    const b = document.createElement('button');
+    b.className = 'pill' + (mealFilter === m ? ' active' : '');
+    b.textContent = m;
+    b.onclick = () => { mealFilter = m; render(); };
+    fp.appendChild(b);
+  });
+
+  // Today entries
+  const te = document.getElementById('today-entries');
+  const filtered = mealFilter === 'All' ? entries : entries.filter(e => e.meal === mealFilter);
+  if (filtered.length === 0) {
+    te.innerHTML = '<div class="empty-state">No entries for this meal</div>';
+  } else {
+    te.innerHTML = filtered.map(e => foodEntryHTML(e)).join('');
+    filtered.forEach(e => {
+      document.getElementById('rm-' + e.id).onclick = () => removeEntry(e.id);
+    });
+  }
+}
+
+function foodEntryHTML(e) {
+  const mc = MEAL_COLORS[e.meal] || '#7A6F65';
+  return `<div class="food-entry">
+    <div class="food-entry-body">
+      <div class="food-entry-top">
+        <span class="food-meal-tag" style="color:${mc}">${e.meal||''}</span>
+        <span class="food-name">${e.name}</span>
+      </div>
+      <div class="food-macros">${e.calories} kcal · P:${e.protein}g · C:${e.carbs}g · F:${e.fat}g</div>
+    </div>
+    <button class="food-remove" id="rm-${e.id}">×</button>
+  </div>`;
+}
+
+function removeEntry(id) {
+  entries = entries.filter(e => e.id !== id);
+  render();
+}
+
+function renderLog(t) {
+  // Meal select
+  const ms = document.getElementById('meal-select');
+  ms.innerHTML = '';
+  ['Breakfast','Lunch','Dinner','Snack'].forEach(m => {
+    const b = document.createElement('button');
+    b.className = 'meal-pill' + (selectedMeal === m ? ' active' : '');
+    b.textContent = m;
+    b.onclick = () => { selectedMeal = m; renderLog(t); };
+    ms.appendChild(b);
+  });
+
+  // Entries list
+  document.getElementById('entries-count').textContent = `Today's Entries (${entries.length})`;
+  const el = document.getElementById('log-entries-list');
+  el.innerHTML = entries.map(e => foodEntryHTML(e)).join('');
+  entries.forEach(e => {
+    const btn = document.getElementById('rm-' + e.id);
+    if (btn) btn.onclick = () => removeEntry(e.id);
+  });
+
+  // AI add button label
+  document.getElementById('ai-add-btn').textContent = `+ Add to ${selectedMeal}`;
+}
+
+function renderCoachSnapshot(t) {
+  const remCal = GOALS.calories - Math.round(t.calories);
+  document.getElementById('snapshot').innerHTML =
+    `So far: ${Math.round(t.calories)} kcal · ${Math.round(t.protein)}g protein · ${Math.round(t.carbs)}g carbs · ${Math.round(t.fat)}g fat<br>
+    <span style="color:${remCal<0?'#BF4040':'#C0622A'}">${remCal>0 ? remCal+' kcal left' : Math.abs(remCal)+' kcal over goal'}</span>`;
+}
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeTab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    ['today','log','coach'].forEach(t => {
+      document.getElementById('tab-' + t).classList.toggle('hidden', t !== activeTab);
+    });
+    render();
+  });
+});
+
+// ── Food lookup ───────────────────────────────────────────────────────────────
+document.getElementById('search-btn').addEventListener('click', lookupFood);
+document.getElementById('search-input').addEventListener('keydown', e => { if(e.key==='Enter') lookupFood(); });
+
+async function lookupFood() {
+  const q = document.getElementById('search-input').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('search-btn');
+  btn.textContent = '...'; btn.disabled = true;
+  document.getElementById('ai-error').classList.add('hidden');
+  document.getElementById('ai-result').classList.add('hidden');
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:800,
+        system:'Nutrition database. Return ONLY valid JSON, no markdown, no fences, no extra text. Fields: name(string), calories, protein, carbs, fat(grams), sodium(mg), fiber(g), sugar(g), vitaminC(mg), calcium(mg), iron(mg), potassium(mg), vitaminD(IU). Use published restaurant data when applicable. Round to 1 decimal.',
+        messages:[{role:'user', content:'Nutrition facts for: ' + q}]
+      })
+    });
+    const data = await res.json();
+    const raw = (data.content||[]).find(b=>b.type==='text')?.text || '';
+    aiResultData = JSON.parse(raw.replace(/^```[a-z]*\n?/i,'').replace(/```$/,'').trim());
+    showAiResult();
+  } catch(e) {
+    const err = document.getElementById('ai-error');
+    err.textContent = 'Could not get nutrition data. Try a more specific description.';
+    err.classList.remove('hidden');
+  }
+
+  btn.textContent = 'LOOK UP'; btn.disabled = false;
+}
+
+function showAiResult() {
+  if (!aiResultData) return;
+  document.getElementById('ai-result-name').textContent = aiResultData.name;
+  const grid = document.getElementById('ai-result-grid');
+  const fields = [['Calories',aiResultData.calories,'kcal'],['Protein',aiResultData.protein,'g'],['Carbs',aiResultData.carbs,'g'],['Fat',aiResultData.fat,'g'],
+    ['Sodium',aiResultData.sodium,'mg'],['Fiber',aiResultData.fiber,'g'],['Sugar',aiResultData.sugar,'g'],['Potassium',aiResultData.potassium,'mg'],
+    ['Vitamin C',aiResultData.vitaminC,'mg'],['Calcium',aiResultData.calcium,'mg'],['Iron',aiResultData.iron,'mg'],['Vitamin D',aiResultData.vitaminD,'IU']];
+  grid.innerHTML = fields.map(([l,v,u]) => `<div class="ai-nutr"><span>${l}: </span>${fmt(v)}${u}</div>`).join('');
+  document.getElementById('ai-result').classList.remove('hidden');
+}
+
+document.getElementById('ai-add-btn').addEventListener('click', () => {
+  if (!aiResultData) return;
+  entries.push({ ...aiResultData, id: nextId++, meal: selectedMeal });
+  document.getElementById('search-input').value = '';
+  aiResultData = null;
+  document.getElementById('ai-result').classList.add('hidden');
+  render();
+});
+
+// ── Coach ─────────────────────────────────────────────────────────────────────
+const QUICK_PROMPTS = ['What should I eat for dinner?','Am I hitting my protein goal?','Analyze my macros today','Best post-workout meal with what\'s left?'];
+const qpDiv = document.getElementById('quick-prompts');
+QUICK_PROMPTS.forEach(p => {
+  const b = document.createElement('button');
+  b.className = 'qp'; b.textContent = p;
+  b.onclick = () => sendChat(p);
+  qpDiv.appendChild(b);
+});
+
+document.getElementById('chat-send').addEventListener('click', () => sendChat(document.getElementById('chat-input').value));
+document.getElementById('chat-input').addEventListener('keydown', e => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat(document.getElementById('chat-input').value);} });
+
+function appendMessage(role, content) {
+  const empty = document.getElementById('chat-empty');
+  if (empty) empty.remove();
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + (role==='user' ? 'chat-user' : 'chat-ai');
+  div.textContent = content;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+async function sendChat(msg) {
+  if (!msg.trim()) return;
+  document.getElementById('chat-input').value = '';
+  appendMessage('user', msg);
+  chatHistory.push({ role:'user', content:msg });
+
+  const t = sum();
+  const snap = `Goals: ${GOALS.calories}kcal, ${GOALS.protein}g protein, ${GOALS.carbs}g carbs, ${GOALS.fat}g fat. Eaten: ${Math.round(t.calories)}kcal, ${Math.round(t.protein)}g protein, ${Math.round(t.carbs)}g carbs, ${Math.round(t.fat)}g fat. Foods: ${entries.map(e=>e.name).join(', ')}.`;
+
+  const msgs = document.getElementById('chat-messages');
+  const thinking = document.createElement('div');
+  thinking.id = 'chat-thinking'; thinking.textContent = 'thinking…';
+  msgs.appendChild(thinking); msgs.scrollTop = msgs.scrollHeight;
+
+  document.getElementById('chat-send').disabled = true;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:800,
+        system:`You are a sports nutritionist for an active 20-year-old male. ${snap} Give concise, actionable advice.`,
+        messages: chatHistory.map(m=>({role:m.role,content:m.content}))
+      })
+    });
+    const data = await res.json();
+    const reply = (data.content||[]).find(b=>b.type==='text')?.text || 'No response.';
+    thinking.remove();
+    appendMessage('assistant', reply);
+    chatHistory.push({ role:'assistant', content:reply });
+  } catch {
+    thinking.remove();
+    appendMessage('assistant', 'Something went wrong. Please try again.');
+  }
+
+  document.getElementById('chat-send').disabled = false;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
